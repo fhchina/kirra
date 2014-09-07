@@ -43,8 +43,6 @@ public class InMemoryInstanceManagement implements InstanceManagement {
         instance.setObjectId(generateId());
 
         Entity entity = schemaManagement.getEntity(instance.getTypeRef());
-        System.out.println(entity);
-        System.out.println(entity.getProperties());
         entity.getProperties().stream().filter(p -> p.isHasDefault()).forEach(p -> instance.setValue(p.getName(), p.getDefaultValue()));
 
         instances.add(instance);
@@ -159,6 +157,11 @@ public class InMemoryInstanceManagement implements InstanceManagement {
     public synchronized List<Instance> getInstances(String namespace, String name, boolean full) {
         TypeRef typeRef = new TypeRef(namespace, name, TypeKind.Entity);
         return getInstances(typeRef);
+    }
+    
+    @Override
+    public List<Instance> filterInstances(Map<String, List<Object>> criteria, String namespace, String name, boolean full) {
+        return getInstances(namespace, name, full);
     }
 
     @Override

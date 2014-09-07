@@ -6,6 +6,9 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
@@ -29,7 +32,6 @@ public class RestClient {
 
     public <T> T executeMethod(HttpMethod method, Type resultType, int... acceptedStatuses) {
         try {
-            System.out.println(method.getName() + " - " + method.getURI());
             if (method instanceof EntityEnclosingMethod)
                 ((EntityEnclosingMethod) method).getRequestEntity().writeRequest(System.out);
             int response = httpClient.executeMethod(method);
@@ -40,7 +42,6 @@ public class RestClient {
                 throw new RuntimeException("Unexpected status code: " + response + " - expected: "
                         + Arrays.asList(acceptedStatuses).toString());
             String responseBody = new String(method.getResponseBody());
-            System.out.println(responseBody);
             return new Gson().fromJson(new StringReader(responseBody), resultType);
         } catch (JsonParseException e) {
             throw e;
@@ -50,10 +51,16 @@ public class RestClient {
             method.releaseConnection();
         }
     }
-
     public <T> T get(URI baseUri, Type type, String... segments) {
+        return get(baseUri, type, Arrays.asList(segments), Collections.<String, List<String>>emptyMap());
+    }
+    public <T> T get(URI baseUri, Type type, List<String> segments, Map<String, List<String>> query) {
         GetMethod get = new GetMethod(baseUri.resolve(StringUtils.join(segments, "/")).toString());
         return executeMethod(get, type);
+    }
+    
+    public <T> T get(URI baseUri, Type type, List<String> segments) {
+        return get(baseUri, type, segments, Collections.<String, List<String>>emptyMap());
     }
     
     public <T> T put(URI baseUri, T toUpdate, String... segments) {
