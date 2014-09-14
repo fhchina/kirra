@@ -11,6 +11,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.abstratt.kirra.Entity;
 import com.abstratt.kirra.Instance;
 import com.abstratt.kirra.Operation;
@@ -42,16 +44,10 @@ public class InstanceActionResource {
         Instance instance = KirraContext.getInstanceManagement().getInstance(entityRef.getEntityNamespace(), entityRef.getTypeName(),
                 objectId, true);
         ResourceHelper.ensure(instance != null, "Instance not found", Status.NOT_FOUND);
+        
         Map<String, Object> argumentMap = new Gson().fromJson(argumentMapRepresentation, new TypeToken<Map<String, Object>>() {
         }.getType());
-        List<Object> argumentList = new ArrayList<Object>();
-        for (Parameter parameter : action.getParameters()) {
-            ResourceHelper.ensure(argumentMap.containsKey(parameter.getName()) || !parameter.isRequired(), "Parameter is required: " + parameter.getName(), Status.BAD_REQUEST);
-            Object argumentValue = argumentMap.get(parameter.getName());
-            if (argumentValue != null && parameter.getTypeRef().getKind() == TypeKind.Entity)
-                argumentValue = new Instance(parameter.getTypeRef(), ((Map<String,Object>) argumentValue).get("objectId").toString());
-            argumentList.add(argumentValue);
-        }
+        List<Object> argumentList = ResourceHelper.matchArgumentsToParameters(action, argumentMap);
         List<?> result = KirraContext.getInstanceManagement().executeOperation(action, objectId, argumentList);
         return CommonHelper.buildGson(null).create().toJson(result);
     }
